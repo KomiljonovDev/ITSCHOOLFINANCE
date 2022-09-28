@@ -98,34 +98,50 @@
                 $data['message'] = 'token and income direction name is required';
 			}
 		}else if($action == 'addworker'){
-			if (isset($token) && isset($name) && isset($lastname)) {
+			if (isset($token) && isset($login) && isset($password) && isset($income_direction_id) && isset($name) && isset($lastname)) {
                 if (isManager($token)) {
                 	$description = ($description) ? $description : '';
                 	$percent = ($percent) ? $percent : 50.00;
-                	$db->insertInto('workers',[
-                		'name'=>$name,
-                		'lastname'=>$lastname,
-                		'des'=>$description,
-                		'percent'=>$percent,
-                		'timestamp'=>strtotime('now')
-                	]);
-                	$incomedirection = $db->selectWhere('workers',[
+                	$direction_id = $db->selectWhere('income_direction',[
                 		[
-                			'id'=>0,
-                			'cn'=>'>='
+                			'id'=>$income_direction_id,
+                			'cn'=>'='
                 		]
                 	]);
-                	$data['ok'] = true;
-            		$data['code'] = 200;
-            		$data['message'] = 'worker added successfully';
-            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+                	if ($direction_id->num_rows) {
+                		$login = trim($login);
+	                	$db->insertInto('workers',[
+	                		'income_direction_id'=>$income_direction_id,
+	                		'login'=>$login,
+	                		'pass_word'=>md5($password),
+	                		'name'=>$name,
+	                		'lastname'=>$lastname,
+	                		'des'=>$description,
+	                		'percent'=>$percent,
+	                		'token'=>md5(uniqid($login)),
+	                		'timestamp'=>strtotime('now')
+	                	]);
+	                	$incomedirection = $db->selectWhere('workers',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'worker added successfully';
+	            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+                	}else{
+                		$data['code'] = 403;
+                		$data['message'] = 'income_direction_id is invalid';
+                	}
                 }else{
                 	$data['code'] = 403;
                 	$data['message'] = 'token is invalid';
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'token and worker name or worker lastname name is required';
+                $data['message'] = 'token,login,password,income_direction_id,worker name and worker lastname name is required';
 			}
 		}else if($action == 'removeworker'){
 			if (isset($token) && isset($id)) {
@@ -136,7 +152,7 @@
                 			'cn'=>"="
                 		],
                 	]);
-                	$incomedirection = $db->selectWhere('workers',[
+                	$workers = $db->selectWhere('workers',[
                 		[
                 			'id'=>0,
                 			'cn'=>'>='
@@ -145,7 +161,7 @@
                 	$data['ok'] = true;
             		$data['code'] = 200;
             		$data['message'] = 'workers deleted successfully';
-            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+            		foreach ($workers as $key => $value) $data['result'][$key] = $value;
                 }else{
                 	$data['code'] = 403;
                 	$data['message'] = 'token is invalid';
@@ -153,6 +169,38 @@
 			}else{
 				$data['code'] = 402;
                 $data['message'] = 'token and income direction name is required';
+			}
+		}else if($action == 'workerlogin'){
+			if (isset($login) && isset($password)) {
+				$password = md5($password);
+				$finance = $db->selectWhere('workers',[
+                    [
+                        'login'=>$login,
+                        'cn'=>'='
+                    ],
+                    [
+                        'pass_word'=>$password,
+                        'cn'=>'='
+                    ],
+                ]);
+                if ($finance->num_rows) {
+                	$finance = mysqli_fetch_assoc($finance);
+                	if (md5($finance['pass_word']) == md5($password)) {
+                		$data['ok'] = true;
+                		$data['code'] = 200;
+                		$data['message'] = 'Loggid in successfully';
+                		foreach ($finance as $key => $value) $data['result'][$key] = $value;
+                	}else{
+                		$data['code'] = 403;
+                		$data['message'] = 'password is invalid';
+                	}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'login or password is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'login and password is required';
 			}
 		}else if(false){
 
