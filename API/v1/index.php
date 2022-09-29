@@ -1,5 +1,5 @@
 <?php
-	error_reporting(0);
+	// error_reporting(0);
 	header('Access-Control-Allow-Origin: *');
 	header('Content-Type: application/json');
 
@@ -168,7 +168,7 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'token and income direction name is required';
+                $data['message'] = 'token and income direction id is required';
 			}
 		}else if($action == 'workerlogin'){
 			if (isset($login) && isset($password)) {
@@ -201,6 +201,381 @@
 			}else{
 				$data['code'] = 402;
                 $data['message'] = 'login and password is required';
+			}
+		}else if($action == 'adddirection'){
+			if (isset($token) && isset($name)) {
+                if (isManager($token)) {
+                	$description = ($description) ? $description : '';
+                	$monthly_payment  = ($monthly_payment) ? $monthly_payment : '250000.00';
+                	$db->insertInto('directions',[
+                		'name'=>$name,
+                		'des'=>$description,
+                		'monthly_payment'=>$monthly_payment,
+                		'timestamp'=>strtotime('now')
+                	]);
+                	$incomedirection = $db->selectWhere('directions',[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'direction added successfully';
+            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and direction name is required';
+			}
+		}else if($action == 'removedirection'){
+			if (isset($token) && isset($id)) {
+                if (isManager($token)) {
+                	$db->delete('directions',[
+                		[
+                			'id'=>$id,
+                			'cn'=>"="
+                		],
+                	]);
+                	$workers = $db->selectWhere('directions',[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'direction deleted successfully';
+            		foreach ($workers as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and direction id is required';
+			}
+		}else if($action == 'newgroup'){
+			if (isset($token) && isset($direction_id) && isset($name)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$direction = $db->selectWhere('directions',[
+						[
+							'id'=>$direction_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($direction->num_rows) {
+						$description = ($description) ? $description : '';
+	                	$db->insertInto('groups',[
+	                		'direction_id'=>$direction_id,
+	                		'name'=>$name,
+	                		'des'=>$description,
+	                		'timestamp'=>strtotime('now')
+	                	]);
+	                	$groups = $db->selectWhere('groups',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'group added successfully';
+	            		foreach ($groups as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'direction_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token, direction_id and group name (name) is required';
+			}
+		}else if($action == 'removegroup'){
+			if (isset($token) && isset($group_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$group = $db->selectWhere('groups',[
+						[
+							'id'=>$group_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($group->num_rows) {
+	                	$db->delete('groups',[
+	                		[
+	                			'id'=>$group_id,
+	                			'cn'=>"="
+	                		],
+	                	]);
+	                	$groups = $db->selectWhere('groups',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'group deleted successfully';
+	            		foreach ($groups as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'group_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and group_id is required';
+			}
+		}else if($action == 'addstudent'){
+			if (isset($token) && isset($group_id) && isset($name) && isset($lastname)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$worker = mysqli_fetch_assoc($worker);
+                	$groups = $db->selectWhere('groups',[
+						[
+							'id'=>$group_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($groups->num_rows) {
+						$grant_percent = ($grant_percent) ? $grant_percent : '00.00';
+	                	$db->insertInto('students',[
+	                		'group_id'=>$group_id,
+	                		'teacher_id'=>$worker['id'],
+	                		'name'=>$name,
+	                		'lastname'=>$lastname,
+	                		'grant_percent'=>$grant_percent,
+	                		'pay_date'=>($grant_percent=='100.00') ? strtotime('now') : '',
+	                		'is_paid'=>($grant_percent=='100.00') ? 1 : 0,
+	                		'timestamp'=>strtotime('now')
+	                	]);
+	                	$students = $db->selectWhere('students',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'student added successfully';
+	            		foreach ($students as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'group_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'teacher token (token),group_id,student name (name), student lastname (lastname) is required';
+			}
+		}else if($action == 'removestudent'){
+			if (isset($token) && isset($student_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$student = $db->selectWhere('students',[
+						[
+							'id'=>$student_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($student->num_rows) {
+						$db->delete('students',[
+	                		[
+	                			'id'=>$student_id,
+	                			'cn'=>"="
+	                		],
+	                	]);
+	                	$students = $db->selectWhere('students',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'student deleted successfully';
+	            		foreach ($students as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'student_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'teacher token (token) and student_id is required';
+			}
+		}else if($action == 'studentfee'){
+			if (isset($token) && isset($id)) {
+                if (isManager($token)) {
+                	$student = $db->selectWhere('students',[
+                		[
+                			'id'=>$id,
+                			'cn'=>'='
+                		]
+                	]);
+                	if ($student->num_rows) {
+	                	$db->update('students',[
+							'pay_date'=>strtotime('next month'),
+							'is_paid'=>'true',
+						],[
+							'id'=>$id,
+							'cn'=>'='
+						]);
+	                	$students = $db->selectWhere('students',[
+	                		[
+	                			'id'=>0,
+	                			'cn'=>'>='
+	                		]
+	                	]);
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'the student has successfully paid the fee';
+	            		foreach ($students as $key => $value){
+	            			$is_paid = 'false';
+	            			if ($key == 'pay_date' && $value > strtotime('now')) $is_paid = 'true';
+	            			if ($key == 'is_paid') $data['result'][$key] = $is_paid;
+	            			$data['result'][$key] = $value;
+	            		}
+                	}else{
+                		$data['code'] = 403;
+                		$data['message'] = 'student id (id) is invalid';
+                	}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and student id (id) is required';
+			}
+		}else if($action == 'getmystudents'){
+			if (isset($token)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$worker = mysqli_fetch_assoc($worker);
+                	$students = $db->selectWhere('students',[
+						[
+							'teacher_id'=>$worker['id'],
+							'cn'=>'=',
+						],
+					]);
+					$student_count = $students->num_rows;
+					if ($students->num_rows) {
+						if ($group_id) {
+		                	$students = $db->selectWhere('students',[
+		                		[
+		                			'teacher_id'=>$teacher_id,
+		                			'cn'=>'='
+		                		]
+		                	], " AND group_id='" . $group_id . "'");
+						}
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'gived your students data';
+	            		$grants = 0;
+	            		$sum = 0;
+	            		foreach ($students as $key => $value) {
+	            			if ($key == 'grant_percent') {
+	            				$student = mysqli_fetch_assoc($students);
+            					$group = mysqli_fetch_assoc($db->selectWhere('groups',[
+									[
+										'id'=>$student['group_id'],
+										'cn'=>'=',
+									],
+								]));
+								$direction = mysqli_fetch_assoc($db->selectWhere('directions',[
+									[
+										'id'=>$group['direction_id'],
+										'cn'=>'=',
+									],
+								]));
+	            				if ($value == '00.00') {
+									$sum+= (($direction['monthly_payment']*$worker['percent'])/100);
+	            				}else{
+	            					$give_sum = ($direction['monthly_payment']*$value)/100;
+	            					$sum+= (($give_sum*$worker['percent'])/100);
+	            				}
+	            			}
+	            			$data['result'][$key] = $value;
+	            		}
+	            		$data['result']['students'] = $student_count;
+            			$data['result']['grants'] = $grants;
+            			$data['result']['salary'] = $sum;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'teacher_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'teacher is required';
+			}
+		}else if(mb_strripos($action, 'get')!==false){ // eng pastgi qimida bo'lishligi ma'qul
+			if (isset($token)) {
+                if (isManager($token)) {
+                	$table = explode('get', $action)[1];
+                	$incomedirection = $db->selectWhere($table,[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'gived ' . $table . " data";
+            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token is required';
 			}
 		}else if(false){
 
