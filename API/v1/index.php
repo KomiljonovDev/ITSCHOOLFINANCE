@@ -1,5 +1,5 @@
 <?php
-	// error_reporting(0);
+	error_reporting(0);
 	header('Access-Control-Allow-Origin: *');
 	header('Content-Type: application/json');
 
@@ -516,33 +516,34 @@
 	            		$data['message'] = 'gived your students data';
 	            		$grants = 0;
 	            		$sum = 0;
+	            		$i = 0;
 	            		foreach ($students as $key => $value) {
-	            			if ($key == 'grant_percent') {
-	            				$student = mysqli_fetch_assoc($students);
-            					$group = mysqli_fetch_assoc($db->selectWhere('groups',[
-									[
-										'id'=>$student['group_id'],
-										'cn'=>'=',
-									],
-								]));
-								$direction = mysqli_fetch_assoc($db->selectWhere('directions',[
-									[
-										'id'=>$group['direction_id'],
-										'cn'=>'=',
-									],
-								]));
-	            				if ($value == '00.00') {
-									$sum+= (($direction['monthly_payment']*$worker['percent'])/100);
-	            				}else{
-	            					$give_sum = ($direction['monthly_payment']*$value)/100;
-	            					$sum+= (($give_sum*$worker['percent'])/100);
-	            				}
-	            			}
+        					$group = mysqli_fetch_assoc($db->selectWhere('groups',[
+								[
+									'id'=>$value['group_id'],
+									'cn'=>'=',
+								],
+							]));
+							$direction = mysqli_fetch_assoc($db->selectWhere('directions',[
+								[
+									'id'=>$group['direction_id'],
+									'cn'=>'=',
+								],
+							]));
+							$i++;
+            				if ($value['grant_percent'] == '00.00') {
+								$sum+= (($direction['monthly_payment']*$worker['percent'])/100);
+            				}else{
+            					$grants++;
+            					$give_sum = $direction['monthly_payment'] - (($direction['monthly_payment']*$value['grant_percent'])/100);
+            					$sum+= (($give_sum*$worker['percent'])/100);
+            				}
 	            			$data['result'][$key] = $value;
 	            		}
 	            		$data['result']['students'] = $student_count;
             			$data['result']['grants'] = $grants;
             			$data['result']['salary'] = $sum;
+            			$data['result']['i'] = $i;
 					}else{
 						$data['code'] = 403;
                 		$data['message'] = 'teacher_id is invalid';
