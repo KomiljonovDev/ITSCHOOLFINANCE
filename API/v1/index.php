@@ -256,7 +256,7 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'token and direction id is required';
+                $data['message'] = 'token and direction id(id) is required';
 			}
 		}else if($action == 'newgroup'){
 			if (isset($token) && isset($direction_id) && isset($name)) {
@@ -585,6 +585,33 @@
 				$data['code'] = 402;
                 $data['message'] = 'token,amount,received_name,title is required';
 			}
+		}else if($action == 'removeexpenses'){
+			if (isset($token) && isset($id)) {
+                if (isManager($token)) {
+                	$db->delete('expenses',[
+                		[
+                			'id'=>$id,
+                			'cn'=>"="
+                		],
+                	]);
+                	$expenses = $db->selectWhere('expenses',[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'expenses deleted successfully';
+            		foreach ($expenses as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and expenses id (id)is required';
+			}
 		}else if ($action == 'addprofit') {
 			if (isset($token) && isset($amount) && isset($title)) {
                 if (isManager($token)) {
@@ -614,6 +641,33 @@
 			}else{
 				$data['code'] = 402;
                 $data['message'] = 'token,amount and title is required';
+			}
+		}else if($action == 'removeprofit'){
+			if (isset($token) && isset($id)) {
+                if (isManager($token)) {
+                	$db->delete('profit',[
+                		[
+                			'id'=>$id,
+                			'cn'=>"="
+                		],
+                	]);
+                	$profit = $db->selectWhere('profit',[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'profit deleted successfully';
+            		foreach ($profit as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token and profit id (id)is required';
 			}
 		}else if(mb_strripos($action, 'get/')!==false){ // eng pastgi qimida bo'lishligi ma'qul
 			if (isset($token)) {
