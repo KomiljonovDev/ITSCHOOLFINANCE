@@ -68,7 +68,7 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'token and income direction name is required';
+                $data['message'] = 'token and income direction name (name) is required';
 			}
 		}else if ($action == 'removeincomedirection') {
 			if (isset($token) && isset($id)) {
@@ -531,7 +531,7 @@
 								],
 							]));
 							$i++;
-            				if ($value['grant_percent'] == '00.00') {
+            				if ($value['grant_percent'] == 0) {
 								$sum+= (($direction['monthly_payment']*$worker['percent'])/100);
             				}else{
             					$grants++;
@@ -554,13 +554,20 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'teacher is required';
+                $data['message'] = 'token is required';
 			}
-		}else if(mb_strripos($action, 'get')!==false){ // eng pastgi qimida bo'lishligi ma'qul
-			if (isset($token)) {
+		}else if ($action == 'addexpenses') {
+			if (isset($token) && isset($amount) && isset($received_name) && isset($title)) {
                 if (isManager($token)) {
-                	$table = explode('get', $action)[1];
-                	$incomedirection = $db->selectWhere($table,[
+                	$description = ($description) ? $description : '';
+                	$db->insertInto('expenses',[
+                		'amount'=>$amount,
+                		'received_name'=>$received_name,
+                		'title'=>$title,
+                		'des'=>$description,
+                		'timestamp'=>strtotime('now')
+                	]);
+                	$expenses = $db->selectWhere('expenses',[
                 		[
                 			'id'=>0,
                 			'cn'=>'>='
@@ -568,8 +575,65 @@
                 	]);
                 	$data['ok'] = true;
             		$data['code'] = 200;
-            		$data['message'] = 'gived ' . $table . " data";
-            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+            		$data['message'] = 'expenses added successfully';
+            		foreach ($expenses as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,amount,received_name,title is required';
+			}
+		}else if ($action == 'addprofit') {
+			if (isset($token) && isset($amount) && isset($title)) {
+                if (isManager($token)) {
+                	$description = ($description) ? $description : '';
+                	$worker = ($worker) ? $worker : '';
+                	$db->insertInto('profit',[
+                		'amount'=>$amount,
+                		'worker'=>$worker,
+                		'title'=>$title,
+                		'des'=>$description,
+                		'timestamp'=>strtotime('now')
+                	]);
+                	$profit = $db->selectWhere('profit',[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	$data['ok'] = true;
+            		$data['code'] = 200;
+            		$data['message'] = 'profit added successfully';
+            		foreach ($profit as $key => $value) $data['result'][$key] = $value;
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,amount and title is required';
+			}
+		}else if(mb_strripos($action, 'get/')!==false){ // eng pastgi qimida bo'lishligi ma'qul
+			if (isset($token)) {
+                if (isManager($token)) {
+                	$table = explode('get/', $action)[1];
+                	$getall = $db->selectWhere($table,[
+                		[
+                			'id'=>0,
+                			'cn'=>'>='
+                		]
+                	]);
+                	if ($getall->num_rows) {
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'gived ' . $table . " data. " . $table . " count: " . $getall->num_rows;
+	            		foreach ($getall as $key => $value) $data['result'][$key] = $value;
+                	}else{
+                		$data['code'] = 401;
+                		$data['message'] = 'get method family is invalid';
+                	}
                 }else{
                 	$data['code'] = 403;
                 	$data['message'] = 'token is invalid';
