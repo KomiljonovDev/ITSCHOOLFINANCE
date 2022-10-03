@@ -372,7 +372,7 @@
 	                		'lastname'=>$lastname,
 	                		'grant_percent'=>$grant_percent,
 	                		'pay_date'=>($grant_percent=='100.00') ? strtotime('now') : '',
-	                		'is_paid'=>($grant_percent=='100.00') ? 1 : 0,
+	                		'is_paid'=>($grant_percent=='100.00') ? 'true' : 'false',
 	                		'timestamp'=>strtotime('now')
 	                	]);
 	                	$students = $db->selectWhere('students',[
@@ -458,6 +458,13 @@
 							'id'=>$id,
 							'cn'=>'='
 						]);
+						$db->update('students',[
+							'is_paid'=>'false',
+						],[
+							'id'=>0,
+							'cn'=>'>='
+						], " AND pay_date<=" . strtotime('now'));
+
 	                	$students = $db->selectWhere('students',[
 	                		[
 	                			'id'=>0,
@@ -468,9 +475,10 @@
 	            		$data['code'] = 200;
 	            		$data['message'] = 'the student has successfully paid the fee';
 	            		foreach ($students as $key => $value){
-	            			$is_paid = 'false';
-	            			if ($key == 'pay_date' && $value > strtotime('now')) $is_paid = 'true';
-	            			if ($key == 'is_paid') $data['result'][$key] = $is_paid;
+	            			$value['is_paid'] = 'false';
+	            			if ($value['pay_date'] > strtotime('now')) {
+	            				$value['is_paid'] = 'true';
+	            			}
 	            			$data['result'][$key] = $value;
 	            		}
                 	}else{
@@ -695,6 +703,22 @@
 			}else{
 				$data['code'] = 402;
                 $data['message'] = 'token is required';
+			}
+		}else if(mb_strripos($action, 'cron/')!==false){
+			$route = explode('cron/', $action)[1];
+			if ($route) {
+				$db->update($route,[
+					'is_paid'=>'false',
+				],[
+					'id'=>0,
+					'cn'=>'>='
+				], " AND pay_date<=" . strtotime('now'));
+				$data['ok'] = true;
+				$data['code'] = 200;
+           		$data['message'] = 'cron successfully';
+			}else{
+				$data['code'] = 401;
+           		$data['message'] = 'cron method family is invalid';
 			}
 		}else if(false){
 
