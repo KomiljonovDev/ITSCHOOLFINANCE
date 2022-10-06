@@ -100,40 +100,51 @@
 		}else if($action == 'addworker'){
 			if (isset($token) && isset($login) && isset($password) && isset($income_direction_id) && isset($name) && isset($lastname)) {
                 if (isManager($token)) {
-                	$description = ($description) ? $description : '';
-                	$percent = ($percent) ? $percent : 50.00;
-                	$direction_id = $db->selectWhere('income_direction',[
+                	$checkLogin = $db->selectWhere('workers',[
                 		[
-                			'id'=>$income_direction_id,
+                			'login'=>$login,
                 			'cn'=>'='
                 		]
                 	]);
-                	if ($direction_id->num_rows) {
-                		$login = trim($login);
-	                	$db->insertInto('workers',[
-	                		'income_direction_id'=>$income_direction_id,
-	                		'login'=>$login,
-	                		'pass_word'=>md5($password),
-	                		'name'=>$name,
-	                		'lastname'=>$lastname,
-	                		'des'=>$description,
-	                		'percent'=>$percent,
-	                		'token'=>md5(uniqid($login)),
-	                		'timestamp'=>strtotime('now')
-	                	]);
-	                	$incomedirection = $db->selectWhere('workers',[
+                	if (!$checkLogin->num_rows) {
+	                	$description = ($description) ? $description : '';
+	                	$percent = ($percent) ? $percent : 50.00;
+	                	$direction_id = $db->selectWhere('income_direction',[
 	                		[
-	                			'id'=>0,
-	                			'cn'=>'>='
+	                			'id'=>$income_direction_id,
+	                			'cn'=>'='
 	                		]
 	                	]);
-	                	$data['ok'] = true;
-	            		$data['code'] = 200;
-	            		$data['message'] = 'worker added successfully';
-	            		foreach ($incomedirection as $key => $value) $data['result'][$key] = $value;
+	                	if ($direction_id->num_rows) {
+	                		$login = trim($login);
+		                	$db->insertInto('workers',[
+		                		'income_direction_id'=>$income_direction_id,
+		                		'login'=>$login,
+		                		'pass_word'=>md5($password),
+		                		'name'=>$name,
+		                		'lastname'=>$lastname,
+		                		'des'=>$description,
+		                		'percent'=>$percent,
+		                		'token'=>md5(uniqid($login)),
+		                		'timestamp'=>strtotime('now')
+		                	]);
+		                	$workers = $db->selectWhere('workers',[
+		                		[
+		                			'id'=>0,
+		                			'cn'=>'>='
+		                		]
+		                	]);
+		                	$data['ok'] = true;
+		            		$data['code'] = 200;
+		            		$data['message'] = 'worker added successfully';
+		            		foreach ($workers as $key => $value) $data['result'][$key] = $value;
+	                	}else{
+	                		$data['code'] = 403;
+	                		$data['message'] = 'this login already exists';
+	                	}
                 	}else{
                 		$data['code'] = 403;
-                		$data['message'] = 'income_direction_id is invalid';
+                		$data['message'] = 'token is invalid';
                 	}
                 }else{
                 	$data['code'] = 403;
