@@ -6,10 +6,10 @@
         protected $dbName;
         protected $token;
         function Dbconfig() {
-            $this -> serverName = 'localhost:3306';
-            $this -> userName = 'okdeveloper';
+            $this -> serverName = 'localhost';
+            $this -> userName = 'komiljonov_db1';
             $this -> passCode = 'st6BWHM33WjiGfqd';
-            $this -> dbName = 'afsona';
+            $this -> dbName = 'komiljonov_db1';
         }
     }
 ?>

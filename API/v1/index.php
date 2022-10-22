@@ -154,6 +154,44 @@
 				$data['code'] = 402;
                 $data['message'] = 'token,login,password,income_direction_id,worker name and worker lastname name is required';
 			}
+		}else if($action == 'getworkerdata'){
+			if (isset($token) && isset($worker_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+				$finance = $db->selectWhere('finance',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows || $finance->num_rows) {
+                	$group = $db->selectWhere('workers',[
+						[
+							'id'=>$worker_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($group->num_rows) {
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'worker data gived';
+	            		foreach ($group as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'worker_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,worker_id are required';
+			}
 		}else if($action == 'removeworker'){
 			if (isset($token) && isset($id)) {
                 if (isManager($token)) {
@@ -270,14 +308,14 @@
                 $data['message'] = 'token and direction id(id) is required';
 			}
 		}else if($action == 'newgroup'){
-			if (isset($token) && isset($direction_id) && isset($name)) {
-				$worker = $db->selectWhere('workers',[
+			if (isset($token) && isset($direction_id) && isset($teacher_id) && isset($name)) {
+				$finance = $db->selectWhere('finance',[
 					[
 						'token'=>$token,
 						'cn'=>'=',
 					],
 				]);
-                if ($worker->num_rows) {
+                if ($finance->num_rows) {
                 	$direction = $db->selectWhere('directions',[
 						[
 							'id'=>$direction_id,
@@ -285,23 +323,35 @@
 						],
 					]);
 					if ($direction->num_rows) {
-						$description = ($description) ? $description : '';
-	                	$db->insertInto('groups',[
-	                		'direction_id'=>$direction_id,
-	                		'name'=>$name,
-	                		'des'=>$description,
-	                		'timestamp'=>strtotime('now')
-	                	]);
-	                	$groups = $db->selectWhere('groups',[
-	                		[
-	                			'id'=>0,
-	                			'cn'=>'>='
-	                		]
-	                	]);
-	                	$data['ok'] = true;
-	            		$data['code'] = 200;
-	            		$data['message'] = 'group added successfully';
-	            		foreach ($groups as $key => $value) $data['result'][$key] = $value;
+						$teacher = $db->selectWhere('workers',[
+							[
+								'id'=>$teacher_id,
+								'cn'=>'=',
+							],
+						]);
+						if ($teacher->num_rows) {
+							$description = ($description) ? $description : '';
+		                	$db->insertInto('groups',[
+		                		'direction_id'=>$direction_id,
+		                		'teacher_id'=>$teacher_id,
+		                		'name'=>$name,
+		                		'des'=>$description,
+		                		'timestamp'=>strtotime('now')
+		                	]);
+		                	$groups = $db->selectWhere('groups',[
+		                		[
+		                			'id'=>0,
+		                			'cn'=>'>='
+		                		]
+		                	]);
+		                	$data['ok'] = true;
+		            		$data['code'] = 200;
+		            		$data['message'] = 'group added successfully';
+		            		foreach ($groups as $key => $value) $data['result'][$key] = $value;
+						}else{
+							$data['code'] = 403;
+                			$data['message'] = 'teacher_id is invalid';
+						}
 					}else{
 						$data['code'] = 403;
                 		$data['message'] = 'direction_id is invalid';
@@ -312,11 +362,120 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'token, direction_id and group name (name) is required';
+                $data['message'] = 'token,direction_id,teacher_id and group name (name) are required';
+			}
+		}else if($action == 'getmygroup'){
+			if (isset($token)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows) {
+                	$worker = mysqli_fetch_assoc($worker);
+                	$group = $db->selectWhere('groups',[
+						[
+							'teacher_id'=>$worker['id'],
+							'cn'=>'=',
+						],
+					]);
+					if ($group->num_rows) {
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'group data gived';
+	            		foreach ($group as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'teacher_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token are required';
+			}
+		}else if($action == 'getgroupdata'){
+			if (isset($token) && isset($group_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+				$finance = $db->selectWhere('finance',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows || $finance->num_rows) {
+                	$group = $db->selectWhere('groups',[
+						[
+							'id'=>$group_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($group->num_rows) {
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'group data gived';
+	            		foreach ($group as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'group_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,group_id are required';
+			}
+		}else if($action == 'getdirectiondata'){
+			if (isset($token) && isset($direction_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+				$finance = $db->selectWhere('finance',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows || $finance->num_rows) {
+                	$directions = $db->selectWhere('directions',[
+						[
+							'id'=>$direction_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($directions->num_rows) {
+	                	$data['ok'] = true;
+	            		$data['code'] = 200;
+	            		$data['message'] = 'directions data gived';
+	            		foreach ($directions as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'direction_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,direction_id are required';
 			}
 		}else if($action == 'removegroup'){
 			if (isset($token) && isset($group_id)) {
-				$worker = $db->selectWhere('workers',[
+				$worker = $db->selectWhere('finance',[
 					[
 						'token'=>$token,
 						'cn'=>'=',
@@ -360,14 +519,13 @@
 			}
 		}else if($action == 'addstudent'){
 			if (isset($token) && isset($group_id) && isset($name) && isset($lastname)) {
-				$worker = $db->selectWhere('workers',[
+				$finance = $db->selectWhere('finance',[
 					[
 						'token'=>$token,
 						'cn'=>'=',
 					],
 				]);
-                if ($worker->num_rows) {
-                	$worker = mysqli_fetch_assoc($worker);
+                if ($finance->num_rows) {
                 	$groups = $db->selectWhere('groups',[
 						[
 							'id'=>$group_id,
@@ -376,9 +534,10 @@
 					]);
 					if ($groups->num_rows) {
 						$grant_percent = ($grant_percent) ? $grant_percent : '00.00';
+						$groups = mysqli_fetch_assoc($groups);
 	                	$db->insertInto('students',[
 	                		'group_id'=>$group_id,
-	                		'teacher_id'=>$worker['id'],
+	                		'teacher_id'=>$groups['teacher_id'],
 	                		'name'=>$name,
 	                		'lastname'=>$lastname,
 	                		'grant_percent'=>$grant_percent,
@@ -406,11 +565,11 @@
                 }
 			}else{
 				$data['code'] = 402;
-                $data['message'] = 'teacher token (token),group_id,student name (name), student lastname (lastname) is required';
+                $data['message'] = 'token,group_id,student name (name), student lastname (lastname) are required';
 			}
 		}else if($action == 'removestudent'){
 			if (isset($token) && isset($student_id)) {
-				$worker = $db->selectWhere('workers',[
+				$worker = $db->selectWhere('finance',[
 					[
 						'token'=>$token,
 						'cn'=>'=',
@@ -453,11 +612,11 @@
                 $data['message'] = 'teacher token (token) and student_id is required';
 			}
 		}else if($action == 'studentfee'){
-			if (isset($token) && isset($id)) {
+			if (isset($token) && isset($student_id)) {
                 if (isManager($token)) {
                 	$student = $db->selectWhere('students',[
                 		[
-                			'id'=>$id,
+                			'id'=>$student_id,
                 			'cn'=>'='
                 		]
                 	]);
@@ -466,7 +625,7 @@
 							'pay_date'=>strtotime('next month'),
 							'is_paid'=>'true',
 						],[
-							'id'=>$id,
+							'id'=>$student_id,
 							'cn'=>'='
 						]);
 						$db->update('students',[
@@ -494,7 +653,7 @@
 	            		}
                 	}else{
                 		$data['code'] = 403;
-                		$data['message'] = 'student id (id) is invalid';
+                		$data['message'] = 'student id (student_id) is invalid';
                 	}
                 }else{
                 	$data['code'] = 403;
@@ -557,12 +716,11 @@
             					$give_sum = $direction['monthly_payment'] - (($direction['monthly_payment']*$value['grant_percent'])/100);
             					$sum+= (($give_sum*$worker['percent'])/100);
             				}
-	            			$data['result'][$key] = $value;
+	            			$data['result']['students_data'][] = $value;
 	            		}
 	            		$data['result']['students'] = $student_count;
             			$data['result']['grants'] = $grants;
             			$data['result']['salary'] = $sum;
-            			$data['result']['i'] = $i;
 					}else{
 						$data['code'] = 403;
                 		$data['message'] = 'teacher_id is invalid';
@@ -574,6 +732,44 @@
 			}else{
 				$data['code'] = 402;
                 $data['message'] = 'token is required';
+			}
+		}else if($action == 'getstudentdata'){
+			if (isset($token) && isset($student_id)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+				$finance = $db->selectWhere('finance',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if ($worker->num_rows || $finance->num_rows) {
+                	$student = $db->selectWhere('students',[
+						[
+							'id'=>$student_id,
+							'cn'=>'=',
+						],
+					]);
+					if ($student->num_rows) {
+						$data['ok'] = true;
+						$data['code'] = 200;
+                		$data['message'] = 'student data gived';
+						foreach ($student as $key => $value) $data['result'][$key] = $value;
+					}else{
+						$data['code'] = 403;
+                		$data['message'] = 'student_id is invalid';
+					}
+                }else{
+                	$data['code'] = 403;
+                	$data['message'] = 'token is invalid';
+                }
+			}else{
+				$data['code'] = 402;
+                $data['message'] = 'token,student_id are required';
 			}
 		}else if ($action == 'addexpenses') {
 			if (isset($token) && isset($amount) && isset($received_name) && isset($title)) {
@@ -690,7 +886,13 @@
 			}
 		}else if(mb_strripos($action, 'get/')!==false){ // eng pastgi qimida bo'lishligi ma'qul
 			if (isset($token)) {
-                if (isManager($token)) {
+				$worker = $db->selectWhere('workers',[
+					[
+						'token'=>$token,
+						'cn'=>'=',
+					],
+				]);
+                if (isManager($token) || $worker->num_rows) {
                 	$table = explode('get/', $action)[1];
                 	$getall = $db->selectWhere($table,[
                 		[
